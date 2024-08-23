@@ -14,12 +14,15 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
 WORKDIR /source
 COPY *.csproj .
-RUN dotnet restore -a $TARGETARCH
+
+# Ensure the NuGet source is configured
+RUN dotnet nuget list source | grep -q "nuget.org" || dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+RUN dotnet nuget locals all --clear
+RUN dotnet restore --runtime linux-x64 --disable-parallel --verbosity detailed
 
 COPY . .
-RUN dotnet publish -c release -o /app -a $TARGETARCH --self-contained false --no-restore
+RUN dotnet publish -c release -o /app --runtime linux-x64 --self-contained false --no-restore
 
-# app image
 FROM mcr.microsoft.com/dotnet/runtime:7.0
 WORKDIR /app
 COPY --from=build /app .
