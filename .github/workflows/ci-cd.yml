@@ -78,7 +78,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: ecr-registry
-        path: ./result
+        path: ./result/ecr_registry.txt
     - name: List downloaded files
       run: ls -al ./result   
     - name: Read ECR Registry
