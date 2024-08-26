@@ -55,9 +55,9 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER} -f Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}
         echo "$ECR_REGISTRY"
-        echo "$ECR_REGISTRY" > result/ecr_registry.txt
+        echo "$ECR_REGISTRY" > ./result/ecr_registry.txt
     - name: List files
-      run: ls -al result
+      run: ls -al ./result
     - name: Upload ECR Registry
       uses: actions/upload-artifact@v2
       with:
