@@ -31,7 +31,7 @@ jobs:
         ECR_REPOSITORY: voting-app
       run: |
         echo "$ECR_REGISTRY/$ECR_REPOSITORY:backend-${GITHUB_RUN_NUMBER}"
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:vote-${GITHUB_RUN_NUMBER} -f example-voting-app/vote/Dockerfile  .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:vote-${GITHUB_RUN_NUMBER} -f vote/Dockerfile  .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-${GITHUB_RUN_NUMBER}
         echo "$ECR_REGISTRY" > ecr_registry.txt
     - name: Build, tag, and push frontend image to Amazon ECR
@@ -41,7 +41,7 @@ jobs:
         ECR_REPOSITORY: voting-app
       run: |
         echo "$ECR_REGISTRY/$ECR_REPOSITORY:frontend-${GITHUB_RUN_NUMBER}"
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:worker-app-${GITHUB_RUN_NUMBER} -f example-voting-app/worker/Dockerfile .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:worker-app-${GITHUB_RUN_NUMBER} -f worker/Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-${GITHUB_RUN_NUMBER}
     - name: Build, tag, and push frontend image to Amazon ECR
       id: build-and-push-result-app
@@ -50,7 +50,7 @@ jobs:
         ECR_REPOSITORY: voting-app
       run: |
         echo "$ECR_REGISTRY/$ECR_REPOSITORY:frontend-${GITHUB_RUN_NUMBER}"
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER} -f example-voting-app/result/Dockerfile .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER} -f result/Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}
     - name: Upload ECR Registry
       uses: actions/upload-artifact@v2
