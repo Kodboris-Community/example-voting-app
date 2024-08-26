@@ -83,7 +83,7 @@ jobs:
       run: ls -al ./result   
     - name: Read ECR Registry
       run: |
-        ECR_REGISTRY=$(cat ecr_registry.txt)
+        ECR_REGISTRY=$(cat ./result/ecr_registry.txt)
         echo "ECR_REGISTRY=$ECR_REGISTRY" >> $GITHUB_ENV
     - name: SSH login to EC2 Instance
       uses: appleboy/ssh-action@v1.0.3
