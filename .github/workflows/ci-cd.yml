@@ -56,6 +56,8 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}
         echo "$ECR_REGISTRY"
         echo "$ECR_REGISTRY" > ecr_registry.txt
+    - name: List files
+      run: ls -al
     - name: Upload ECR Registry
       uses: actions/upload-artifact@v2
       with:
@@ -77,6 +79,8 @@ jobs:
       with:
         name: ecr-registry
         path: ./result
+    - name: List downloaded files
+      run: ls -al ./result   
     - name: Read ECR Registry
       run: |
         ECR_REGISTRY=$(cat ecr_registry.txt)
@@ -106,4 +110,3 @@ jobs:
           else
             echo "Error!!!!! can not recreate service update"
             exit 1
-          fi
