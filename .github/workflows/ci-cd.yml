@@ -34,7 +34,6 @@ jobs:
         echo "$ECR_REGISTRY/$ECR_REPOSITORY:vote-app-${GITHUB_RUN_NUMBER}"
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:vote-app-${GITHUB_RUN_NUMBER} -f Dockerfile  .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:vote-app-${GITHUB_RUN_NUMBER}
-        echo "$ECR_REGISTRY" > ecr_registry.txt
     - name: Build, tag, and push frontend image to Amazon ECR
       id: build-and-push-worker-app
       env:
@@ -55,6 +54,8 @@ jobs:
         echo "$ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}"
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER} -f Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}
+        echo "$ECR_REGISTRY"
+        echo "$ECR_REGISTRY" > ecr_registry.txt
     - name: Upload ECR Registry
       uses: actions/upload-artifact@v2
       with:
@@ -75,7 +76,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: ecr-registry
-        path: .
+        path: ./result
     - name: Read ECR Registry
       run: |
         ECR_REGISTRY=$(cat ecr_registry.txt)
