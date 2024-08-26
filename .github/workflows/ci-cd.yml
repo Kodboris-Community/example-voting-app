@@ -53,7 +53,7 @@ jobs:
       run: |
         cd result
         echo "$ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}"
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER} -f result/Dockerfile .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER} -f Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}
     - name: Upload ECR Registry
       uses: actions/upload-artifact@v2
