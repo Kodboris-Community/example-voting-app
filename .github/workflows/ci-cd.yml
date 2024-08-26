@@ -1,0 +1,105 @@
+name: CI/CD Pipeline for Frontend and Backend
+
+on:
+  push:
+    branches:
+      - jaiye/devops
+
+jobs:
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.JAIYE_AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.JAIYE_AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push backend image to Amazon ECR
+      id: build-and-push-frontend
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: voting-app
+      run: |
+        echo "$ECR_REGISTRY/$ECR_REPOSITORY:backend-${GITHUB_RUN_NUMBER}"
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:vote-${GITHUB_RUN_NUMBER} -f example-voting-app/vote/Dockerfile  .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-${GITHUB_RUN_NUMBER}
+        echo "$ECR_REGISTRY" > ecr_registry.txt
+    - name: Build, tag, and push frontend image to Amazon ECR
+      id: build-and-push-worker-app
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: voting-app
+      run: |
+        echo "$ECR_REGISTRY/$ECR_REPOSITORY:frontend-${GITHUB_RUN_NUMBER}"
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:worker-app-${GITHUB_RUN_NUMBER} -f example-voting-app/worker/Dockerfile .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-${GITHUB_RUN_NUMBER}
+    - name: Build, tag, and push frontend image to Amazon ECR
+      id: build-and-push-result-app
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: voting-app
+      run: |
+        echo "$ECR_REGISTRY/$ECR_REPOSITORY:frontend-${GITHUB_RUN_NUMBER}"
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER} -f example-voting-app/result/Dockerfile .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}
+    - name: Upload ECR Registry
+      uses: actions/upload-artifact@v2
+      with:
+        name: ecr-registry
+        path: ecr_registry.txt
+
+  deploy:
+    name: Deploy to Test
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      ECR_REPOSITORY: voting-app
+      DIRECTORY: my-app
+      COMPOSE: compose.yml
+      
+    steps:
+    - name: Download ECR Registry
+      uses: actions/download-artifact@v2
+      with:
+        name: ecr-registry
+        path: .
+    - name: Read ECR Registry
+      run: |
+        ECR_REGISTRY=$(cat ecr_registry.txt)
+        echo "ECR_REGISTRY=$ECR_REGISTRY" >> $GITHUB_ENV
+    - name: SSH login to EC2 Instance
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.JAIYE_HOST }}
+        username: ${{ secrets.JAIYE_USERNAME }}
+        key: ${{ secrets.JAIYE_KEY }}
+        port: ${{ secrets.PORT }}
+        envs: GITHUB_RUN_NUMBER,ECR_REGISTRY,ECR_REPOSITORY,DIRECTORY,COMPOSE
+        script: |
+          echo "Environment Variables:"
+          echo "GITHUB_TRIGGERING_ACTOR: $GITHUB_TRIGGERING_ACTOR"
+          echo "GITHUB_RUN_NUMBER: $GITHUB_RUN_NUMBER"
+          echo "ECR_REGISTRY: $ECR_REGISTRY"
+          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
+          echo "DIRECTORY: $DIRECTORY"
+          echo "COMPOSE: $COMPOSE"
+          cd $DIRECTORY && yq -y -i '.services.vote.image = "$ECR_REGISTRY/$ECR_REPOSITORY:vote-app-${GITHUB_RUN_NUMBER}"' $COMPOSE && \
+          yq -y -i '.services.worker.image = "$ECR_REGISTRY/$ECR_REPOSITORY:worker-app-${GITHUB_RUN_NUMBER}"' $COMPOSE && \
+          yq -y -i '.services.result.image = "$ECR_REGISTRY/$ECR_REPOSITORY:result-app-${GITHUB_RUN_NUMBER}"' $COMPOSE && \
+          docker compose up --build --force-recreate -d
+          if [[ $? == 0 ]]; then
+            echo "Deployment Successful!!!"
+          else
+            echo "Error!!!!! can not recreate service update"
+            exit 1
+          fi
