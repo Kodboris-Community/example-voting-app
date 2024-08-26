@@ -57,12 +57,12 @@ jobs:
         echo "$ECR_REGISTRY"
         echo "$ECR_REGISTRY" > ecr_registry.txt
     - name: List files
-      run: ls -al
+      run: ls -al ./result
     - name: Upload ECR Registry
       uses: actions/upload-artifact@v2
       with:
         name: ecr-registry
-        path: ecr_registry.txt
+        path: ./result/ecr_registry.txt
 
   deploy:
     name: Deploy to Test
